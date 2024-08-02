@@ -28,15 +28,31 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false; // Track loading state
   final APIService _apiService = APIService();
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   // Function to handle login logic
   void _login() async {
     final username = _usernameController.text;
     final password = _passwordController.text;
 
+    setState(() {
+      _isLoading = true; // Start loading animation
+    });
+
     // Hit API with username and password
     final isSuccess = await _apiService.hitLoginApi(username, password);
+
+    setState(() {
+      _isLoading = false; // Stop loading animation
+    });
 
     if (isSuccess) {
       // Navigate to the next page if login is successful
@@ -45,10 +61,17 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (context) => const Bottombar()),
       );
     } else {
-      // Show an error message if login is unsuccessful
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please try again.')),
-      );
+      // Show an error message if login is unsuccessful with a delay
+      Future.delayed(const Duration(milliseconds: 5), () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Login failed. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: const Duration(
+                milliseconds: 400), // Shorter duration for SnackBar
+          ),
+        );
+      });
     }
   }
 
@@ -115,9 +138,20 @@ class _LoginPageState extends State<LoginPage> {
                         // Username text field
                         TextField(
                           controller: _usernameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Username',
                             border: OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.grey, // Default border color
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context)
+                                    .primaryColor, // Default focused border color
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -126,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                           controller: _passwordController,
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            border: const OutlineInputBorder(),
+                            border: OutlineInputBorder(),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _isPasswordVisible
@@ -139,20 +173,39 @@ class _LoginPageState extends State<LoginPage> {
                                 });
                               },
                             ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.grey, // Default border color
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context)
+                                    .primaryColor, // Default focused border color
+                              ),
+                            ),
                           ),
                           obscureText: !_isPasswordVisible,
                         ),
                         const SizedBox(height: 20),
-                        // Submit button with custom color
+                        // Submit button with loading animation
                         ElevatedButton(
-                          onPressed: _login,
+                          onPressed: _isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
                             shape: const CircleBorder(),
                             padding: const EdgeInsets.all(20),
-                            backgroundColor:
-                                Colors.amberAccent, // Change button color here
+                            backgroundColor: Colors.amberAccent, // Button color
                           ),
-                          child: const Icon(Icons.arrow_forward),
+                          child: _isLoading
+                              ? SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3.0,
+                                  ),
+                                )
+                              : const Icon(Icons.arrow_forward),
                         ),
                         const SizedBox(height: 20),
                         // Forgot password button

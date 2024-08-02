@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 
 import '../HOME/Pages/Home.dart';
+import '../Profile/Pages/Profile_page.dart';
 
 class Bottombar extends StatefulWidget {
   const Bottombar({super.key});
@@ -15,7 +16,8 @@ class _BottombarState extends State<Bottombar> {
 
   // List of pages to display in the bottom bar
   final List<Widget> _pages = [
-    const Home(), // Ensure these pages are defined and imported correctly
+    const AttendancePage(),
+    const ProfilePage(), // Ensure these pages are defined and imported correctly
   ];
 
   void _onItemTapped(int index) {

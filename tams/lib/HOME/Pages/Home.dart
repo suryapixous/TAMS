@@ -1,138 +1,84 @@
 import 'package:flutter/material.dart';
+import 'calendar_page.dart'; // Import the CalendarPage class
 
-class Home extends StatelessWidget {
-  const Home({super.key});
+class AttendancePage extends StatefulWidget {
+  const AttendancePage({super.key});
+
+  @override
+  _AttendancePageState createState() => _AttendancePageState();
+}
+
+class _AttendancePageState extends State<AttendancePage> {
+  final List<String> _courses = [
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'Computer Science'
+  ];
+
+  String? _selectedCourse;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.red, Colors.orange],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              'Notice Board',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+        title: const Text('Attendance'),
+        backgroundColor: Colors.deepPurpleAccent,
+        elevation: 5,
+      ),
+      body: _selectedCourse == null
+          ? _buildCourseList()
+          : CalendarPage(
+              selectedCourse: _selectedCourse!,
+              onDateSelected: (DateTime date) {
+                // Handle attendance submission here
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        'Attendance marked for $_selectedCourse on ${date.toLocal()}'),
+                    backgroundColor: Colors.greenAccent,
                   ),
+                );
+              },
             ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              // Add search functionality here
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              // Add notification functionality here
-            },
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(8.0),
-        children: [
-          _buildNoticeCard(
-            context,
-            imageUrl: 'Assets/Images/Python-Intrerview-Q&A-copy.webp',
-            title: 'Notice Title 1',
-            description:
-                'This is a brief description of notice 1. It contains important information.',
-          ),
-          _buildNoticeCard(
-            context,
-            imageUrl: 'Assets/Images/Python-Intrerview-Q&A-copy.webp',
-            title: 'Notice Title 2',
-            description:
-                'This is a brief description of notice 2. It contains more details about the notice.',
-          ),
-          _buildNoticeCard(
-            context,
-            imageUrl: 'Assets/Images/Python-Intrerview-Q&A-copy.webp',
-            title: 'Notice Title 3',
-            description:
-                'This is a brief description of notice 3. Read it for further information.',
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _buildNoticeCard(
-    BuildContext context, {
-    required String imageUrl,
-    required String title,
-    required String description,
-  }) {
-    return Card(
-      elevation: 8,
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Image.asset(
-                imageUrl,
-                height: 150,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.black54, Colors.transparent],
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                    ),
-                  ),
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+  Widget _buildCourseList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: _courses.length,
+      itemBuilder: (context, index) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          decoration: BoxDecoration(
+            color: Colors.deepPurpleAccent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              description,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontSize: 14,
-                  ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+          child: ListTile(
+            title: Text(
+              _courses[index],
+              style: const TextStyle(color: Colors.white, fontSize: 18),
             ),
+            onTap: () {
+              setState(() {
+                _selectedCourse = _courses[index];
+              });
+            },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
