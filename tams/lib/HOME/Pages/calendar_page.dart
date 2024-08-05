@@ -1,32 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:qr_flutter/qr_flutter.dart'; // Example QR scanner package
+import '../../MYcustomWidgets/Constant_page.dart';
+import 'qr_scanner_page.dart'; // Import the QR scanner page
 
 class CalendarPage extends StatefulWidget {
   final String selectedCourse;
-  final void Function(DateTime) onDateSelected; // Add this line
 
   const CalendarPage({
     super.key,
     required this.selectedCourse,
-    required this.onDateSelected, // Add this line
   });
 
   @override
   _CalendarPageState createState() => _CalendarPageState();
 }
 
-class _CalendarPageState extends State<CalendarPage> {
+class _CalendarPageState extends State<CalendarPage>
+    with SingleTickerProviderStateMixin {
   DateTime _selectedDate = DateTime.now();
   final DateTime _currentDate = DateTime.now();
-
-  // Define the status of the last 3 days dynamically
-  late final Map<DateTime, String> _statusMap;
+  late Map<DateTime, String> _statusMap;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  bool _showTutorial = true; // Flag to control the visibility of the tutorial
 
   @override
   void initState() {
     super.initState();
     _updateStatusMap();
+
+    // Initialize the AnimationController
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+    _fadeAnimation =
+        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
+
+    // Start the animation
+    if (_showTutorial) {
+      _animationController.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _updateStatusMap() {
@@ -41,75 +61,99 @@ class _CalendarPageState extends State<CalendarPage> {
     };
   }
 
+  Future<void> _refreshCalendar() async {
+    // Simulate a network request or data fetching
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      _updateStatusMap(); // Refresh status map or update it with new data
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            'Select a date to mark attendance for ${widget.selectedCourse}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: appBarColor,
+        centerTitle: true,
+        title: Text('Calendar - ${widget.selectedCourse}'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: TableCalendar(
-                focusedDay: _selectedDate,
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                calendarStyle: CalendarStyle(
-                  selectedDecoration: BoxDecoration(
-                    color: Colors.deepPurpleAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: Colors.orangeAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  todayTextStyle: const TextStyle(color: Colors.white),
-                ),
-                calendarBuilders: CalendarBuilders(
-                  defaultBuilder: (context, day, focusedDay) {
-                    final status = _statusMap[day] ?? 'none';
-                    return GestureDetector(
-                      onTap: () {
-                        if (isSameDay(day, _currentDate)) {
-                          // Open QR scanner when current date is clicked
-                          _openQrScanner();
-                        } else {
-                          // Call the onDateSelected callback for other dates
-                          widget.onDateSelected(day);
-                        }
-                      },
-                      child: _buildCustomDateWidget(day, status),
-                    );
+      ),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _refreshCalendar,
+            child: ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                const SizedBox(height: 16.0),
+                TableCalendar(
+                  focusedDay: _selectedDate,
+                  firstDay: DateTime.utc(2020, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDate = selectedDay;
+                    });
+                    if (isSameDay(selectedDay, _currentDate)) {
+                      _openQrScanner();
+                    }
                   },
+                  selectedDayPredicate: (day) {
+                    return isSameDay(_selectedDate, day);
+                  },
+                  calendarStyle: CalendarStyle(
+                    selectedDecoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    todayDecoration: BoxDecoration(
+                      color: Colors.orangeAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    todayTextStyle: const TextStyle(color: Colors.white),
+                    defaultDecoration: BoxDecoration(
+                      color: Colors.blueGrey[50],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder: (context, day, focusedDay) {
+                      final status = _statusMap[day] ?? 'none';
+                      return _buildCustomDateWidget(day, status);
+                    },
+                  ),
+                  headerStyle: HeaderStyle(
+                    formatButtonVisible: false,
+                    titleTextStyle: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    titleCentered: true,
+                    leftChevronIcon: Icon(
+                      Icons.chevron_left,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    rightChevronIcon: Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                 ),
-                headerStyle: HeaderStyle(
-                  formatButtonVisible: false,
-                  titleTextStyle: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.deepPurpleAccent,
-                  ),
-                  leftChevronIcon: Icon(
-                    Icons.chevron_left,
-                    color: Colors.deepPurpleAccent,
-                  ),
-                  rightChevronIcon: Icon(
-                    Icons.chevron_right,
-                    color: Colors.deepPurpleAccent,
-                  ),
-                ),
-              ),
+              ],
             ),
           ),
-        ),
-      ],
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: _showTutorial ? _buildTutorialOverlay() : SizedBox.shrink(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -127,7 +171,7 @@ class _CalendarPageState extends State<CalendarPage> {
         color = Colors.orange;
         break;
       default:
-        color = Colors.transparent; // Default color if no status
+        color = Colors.transparent;
     }
 
     return Container(
@@ -139,7 +183,7 @@ class _CalendarPageState extends State<CalendarPage> {
         child: Text(
           '${date.day}',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.grey,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -147,20 +191,59 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  void _openQrScanner() {
-    // Replace this with actual QR scanner logic
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('QR Scanner'),
-        content: const Text('QR Scanner functionality goes here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+  Widget _buildTutorialOverlay() {
+    return Positioned(
+      top: 100,
+      left: MediaQuery.of(context).size.width * 0.1,
+      right: MediaQuery.of(context).size.width * 0.1,
+      child: Material(
+        color: Colors.black.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(8.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Click your today\'s date',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: () {
+                  _animationController.reverse().then((_) {
+                    setState(() {
+                      _showTutorial = false;
+                    });
+                  });
+                },
+                child: const Text('Got it'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  void _openQrScanner() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QrScannerPage(),
+      ),
+    );
+
+    if (result == true) {
+      // Update the status of the current date to 'present' if QR code is valid
+      setState(() {
+        _statusMap[_currentDate] = 'present';
+      });
+    }
   }
 }

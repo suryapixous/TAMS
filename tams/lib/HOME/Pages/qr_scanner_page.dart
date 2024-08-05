@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:flutter/foundation.dart'; // Import this for describeEnum
+import 'package:awesome_dialog/awesome_dialog.dart'; // Import AwesomeDialog
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+
+import '../../MYcustomWidgets/Constant_page.dart'; // Import SpinKit
+
+class QrScannerPage extends StatefulWidget {
+  @override
+  _QrScannerPageState createState() => _QrScannerPageState();
+}
+
+class _QrScannerPageState extends State<QrScannerPage> {
+  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  QRViewController? controller;
+  Barcode? result;
+  bool isScanning = true;
+  bool isProcessing = false; // Added state for processing
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('QR Scanner'),
+        centerTitle: true,
+        backgroundColor: appBarColor,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          QRView(
+            key: qrKey,
+            onQRViewCreated: _onQRViewCreated,
+            overlay: QrScannerOverlayShape(
+              borderColor: appBarColor,
+              borderRadius: 20,
+              borderLength: 40,
+              borderWidth: 12,
+              cutOutSize: MediaQuery.of(context).size.width * 0.75,
+            ),
+          ),
+          if (result != null &&
+              !isProcessing) // Show result container only if not processing
+            Center(
+              child: Container(
+                color: Colors.black.withOpacity(0.6),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Barcode Type: ${describeEnum(result!.format)}',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Data: ${result!.code}',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        _handleQRCode(result!.code);
+                      },
+                      child: const Text('Mark Attendance'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: appBarColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (isProcessing)
+            Center(
+              child: SpinKitRipple(
+                color: appBarColor,
+                size: 80.0,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _onQRViewCreated(QRViewController controller) {
+    setState(() {
+      this.controller = controller;
+    });
+    controller.scannedDataStream.listen((scanData) {
+      setState(() {
+        result = scanData;
+        isScanning = false;
+        isProcessing = true; // Start showing loading animation
+      });
+      controller.pauseCamera(); // Pause the camera after a successful scan
+
+      // Simulate processing time and show the dialog afterward
+      Future.delayed(Duration(seconds: 2), () {
+        _handleQRCode(result!.code);
+      });
+    });
+  }
+
+  void _handleQRCode(String? code) {
+    if (code != null && code.toLowerCase() == 'surya') {
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.success,
+        title: 'Success',
+        desc: 'You are marked present!',
+        btnOkOnPress: () {
+          Navigator.pop(context, true); // Return true to indicate success
+        },
+        btnOkColor: Theme.of(context).colorScheme.primary,
+        headerAnimationLoop: false, // No tick symbol
+      ).show();
+    } else {
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.error,
+        title: 'Failed',
+        desc: 'Invalid QR code!',
+        btnOkOnPress: () {
+          Navigator.pop(context, false); // Return false to indicate failure
+        },
+        btnOkColor: Theme.of(context).colorScheme.primary,
+      ).show();
+    }
+
+    // Stop showing the loading animation
+    setState(() {
+      isProcessing = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    controller?.dispose(); // Dispose the controller when the page is disposed
+    super.dispose();
+  }
+}
