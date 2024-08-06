@@ -1,4 +1,5 @@
 // constants.dart
 import 'package:flutter/material.dart';
 
-const appBarColor = Colors.deepPurpleAccent;
+const appBarColor = Colors.purple;
+const appBarTextColor = Colors.white;

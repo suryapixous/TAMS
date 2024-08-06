@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 import 'package:tams/Appbar/BottomNavigationBar.dart';
+import 'package:tams/Login/Pages/Forget_password.dart';
 import 'package:tams/MYcustomWidgets/Customwidgets.dart';
 import 'package:tams/HOME/Pages/Home.dart';
 import 'package:tams/Login/Service/api_service.dart';
@@ -11,25 +13,30 @@ class LoginPage extends StatefulWidget {
   _LoginPageState createState() => _LoginPageState();
 }
 
-// Forgot Password page
-class ForgotPasswordPage extends StatelessWidget {
-  const ForgotPasswordPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Forgot Password')),
-      body: const Center(child: Text('Forgot Password Page')),
-    );
-  }
-}
-
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false; // Track loading state
   final APIService _apiService = APIService();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool? isLoggedIn = prefs.getBool('isLoggedIn');
+    if (isLoggedIn == true) {
+      // Navigate to the next page if already logged in
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Bottombar()),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -55,8 +62,11 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (isSuccess) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true); // Save login status
+
       // Navigate to the next page if login is successful
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const Bottombar()),
       );
@@ -64,11 +74,11 @@ class _LoginPageState extends State<LoginPage> {
       // Show an error message if login is unsuccessful with a delay
       Future.delayed(const Duration(milliseconds: 5), () {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Login failed. Please try again.'),
+          const SnackBar(
+            content: Text('Login failed. Please try again.'),
             backgroundColor: Colors.red,
-            duration: const Duration(
-                milliseconds: 400), // Shorter duration for SnackBar
+            duration:
+                Duration(milliseconds: 400), // Shorter duration for SnackBar
           ),
         );
       });

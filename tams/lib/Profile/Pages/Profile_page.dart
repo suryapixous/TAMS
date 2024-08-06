@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:flutter/animation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../Login/Pages/Login.dart';
+import '../../MYcustomWidgets/Constant_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -10,9 +15,15 @@ class ProfilePage extends StatefulWidget {
   _ProfilePageState createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage>
+    with TickerProviderStateMixin {
   bool _isEditing = false;
   bool _hasChanges = false;
+
+  late final AnimationController _buttonAnimationController;
+  late final Animation<double> _buttonAnimation;
+  late final AnimationController _imageAnimationController;
+  late final Animation<double> _imageAnimation;
 
   final List<Map<String, String>> _fieldData = [
     {'label': 'First Name', 'value': 'John'},
@@ -36,6 +47,25 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+
+    _buttonAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _buttonAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(
+          parent: _buttonAnimationController, curve: Curves.easeInOut),
+    );
+
+    _imageAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _imageAnimation = Tween<double>(begin: 1.0, end: 0.7).animate(
+      CurvedAnimation(
+          parent: _imageAnimationController, curve: Curves.easeInOut),
+    );
+
     _controllers = _fieldData
         .map((data) => TextEditingController(text: data['value']!))
         .toList();
@@ -48,6 +78,16 @@ class _ProfilePageState extends State<ProfilePage> {
     _requestPermissions();
   }
 
+  @override
+  void dispose() {
+    _buttonAnimationController.dispose();
+    _imageAnimationController.dispose();
+    for (var controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   Future<void> _requestPermissions() async {
     final status = await [
       Permission.camera,
@@ -56,14 +96,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
     print('Camera permission status: ${status[Permission.camera]}');
     print('Storage permission status: ${status[Permission.storage]}');
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
   }
 
   void _checkForChanges() {
@@ -86,8 +118,11 @@ class _ProfilePageState extends State<ProfilePage> {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile != null) {
-        setState(() {
-          _profileImage = File(pickedFile.path);
+        _imageAnimationController.forward().then((_) {
+          setState(() {
+            _profileImage = File(pickedFile.path);
+          });
+          _imageAnimationController.reverse();
         });
       } else {
         print('No image selected.');
@@ -98,222 +133,288 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _onSave() async {
-    final bool? confirm = await showDialog<bool>(
+    final bool? confirm = await AwesomeDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Changes'),
-        content: const Text('Are you sure you want to save changes?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
+      dialogType: DialogType.question,
+      animType: AnimType.bottomSlide,
+      title: 'Save Changes',
+      desc: 'Are you sure you want to save changes?',
+      btnCancelOnPress: () {
+        setState(() {
+          _isEditing = false;
+        });
+      },
+      btnOkOnPress: () {
+        if (_hasChanges) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Changes saved successfully.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No changes were made.')),
+          );
+        }
+        setState(() {
+          _isEditing = false;
+          _hasChanges = false;
+        });
+      },
+    ).show();
+  }
 
-    if (confirm == true) {
-      if (_hasChanges) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Changes saved successfully.')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No changes were made.')),
-        );
-      }
-      setState(() {
-        _isEditing = false;
-        _hasChanges = false;
-      });
-    } else if (confirm == false) {
-      setState(() {
-        _isEditing = false;
-      });
-    }
+  Future<void> _refreshProfile() async {
+    await Future.delayed(const Duration(seconds: 2));
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.blueAccent,
-        elevation: 0,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100.0),
+        child: AppBar(
+          backgroundColor: appBarColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(30),
+            ),
+          ),
+          flexibleSpace: Center(
+            child: Text(
+              'Profile',
+              style: TextStyle(
+                color: appBarTextColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () => _handleLogout(context),
+            )
+          ],
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 70,
-                    backgroundColor: Colors.blueAccent.withOpacity(0.3),
-                    child: CircleAvatar(
-                      radius: 65,
-                      backgroundImage: _profileImage != null
-                          ? FileImage(_profileImage!)
-                          : const AssetImage(
-                                  'assets/images/ali-morshedlou-WMD64tMfc4k-unsplash.jpg')
-                              as ImageProvider,
-                      backgroundColor: Colors.transparent,
+      body: RefreshIndicator(
+        onRefresh: _refreshProfile,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Stack(
+                  children: [
+                    AnimatedBuilder(
+                      animation: _imageAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _imageAnimation.value,
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundColor: Colors.blueAccent.withOpacity(0.3),
+                            child: CircleAvatar(
+                              radius: 35,
+                              backgroundImage: _profileImage != null
+                                  ? FileImage(_profileImage!)
+                                  : const AssetImage(
+                                          'Assets/Images/ali-morshedlou-WMD64tMfc4k-unsplash.jpg')
+                                      as ImageProvider,
+                              backgroundColor: Colors.transparent,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                  if (_isEditing)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.camera_alt,
-                            color: Colors.blueAccent,
+                    if (_isEditing)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: CircleAvatar(
+                            radius: 15,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: Colors.blueAccent,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.blueAccent, Colors.lightBlueAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(30),
+                  ],
                 ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_isEditing) {
-                      if (_formKey.currentState?.validate() ?? false) {
-                        _onSave();
-                      }
-                    } else {
-                      setState(() {
-                        _isEditing = !_isEditing;
-                      });
-                    }
-                  },
-                  child: Text(_isEditing ? 'Save Changes' : 'Edit Profile'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                const SizedBox(height: 20),
+                ScaleTransition(
+                  scale: _buttonAnimation,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0x25807878), Color(0x25807878)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _fieldData.length,
-                  itemBuilder: (context, index) {
-                    final label = _fieldData[index]['label']!;
-                    final value = _controllers[index].text;
-
-                    TextInputType keyboardType;
-                    bool isObscure = false;
-                    String? Function(String?)? validator;
-
-                    switch (label) {
-                      case 'Email':
-                        keyboardType = TextInputType.emailAddress;
-                        validator = (value) {
-                          final emailRegex = RegExp(
-                              r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                          if (value == null || !emailRegex.hasMatch(value)) {
-                            return 'Enter a valid email';
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _buttonAnimationController.forward().then((_) {
+                          if (_isEditing) {
+                            if (_formKey.currentState?.validate() ?? false) {
+                              _onSave();
+                            }
+                          } else {
+                            setState(() {
+                              _isEditing = !_isEditing;
+                            });
                           }
-                          return null;
-                        };
-                        break;
-                      case 'Mobile Number':
-                        keyboardType = TextInputType.phone;
-                        break;
-                      case 'Address':
-                        keyboardType = TextInputType.multiline;
-                        break;
-                      case 'Postal Code':
-                        keyboardType = TextInputType.number;
-                        break;
-                      default:
-                        keyboardType = TextInputType.text;
-                        break;
-                    }
+                          _buttonAnimationController.reverse();
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _isEditing ? 'Save Changes' : 'Edit Profile',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _fieldData.length,
+                    itemBuilder: (context, index) {
+                      final label = _fieldData[index]['label']!;
+                      final value = _controllers[index].text;
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: _isEditing
-                          ? TextFormField(
-                              controller: _controllers[index],
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                labelText: label,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 15,
-                                  horizontal: 12,
-                                ),
+                      TextInputType keyboardType;
+                      bool isObscure = false;
+                      String? Function(String?)? validator;
+
+                      switch (label) {
+                        case 'Email':
+                          keyboardType = TextInputType.emailAddress;
+                          validator = (value) {
+                            if (value == null ||
+                                value.isEmpty ||
+                                !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                    .hasMatch(value)) {
+                              return 'Please enter a valid email address';
+                            }
+                            return null;
+                          };
+                          break;
+                        case 'Mobile Number':
+                          keyboardType = TextInputType.phone;
+                          validator = (value) {
+                            if (value == null ||
+                                value.isEmpty ||
+                                !RegExp(r'^[0-9]{10}$').hasMatch(value)) {
+                              return 'Please enter a valid 10-digit mobile number';
+                            }
+                            return null;
+                          };
+                          break;
+                        case 'Active Status':
+                          keyboardType = TextInputType.text;
+                          break;
+                        default:
+                          keyboardType = TextInputType.text;
+                      }
+
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextFormField(
+                            controller: _controllers[index],
+                            keyboardType: keyboardType,
+                            obscureText: isObscure,
+                            validator: validator,
+                            enabled: _isEditing,
+                            decoration: InputDecoration(
+                              labelText: label,
+                              labelStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
                               ),
-                              keyboardType: keyboardType,
-                              obscureText: isObscure,
-                              maxLines: label == 'Address' ? null : 1,
-                              validator: validator,
-                            )
-                          : Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: Colors.grey.withOpacity(0.5),
-                                  ),
-                                ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 15),
+                              border: InputBorder.none,
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: _isEditing
+                                        ? Colors.blue
+                                        : Colors.transparent),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    label,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      value,
-                                      textAlign: TextAlign.end,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                ],
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: _isEditing
+                                        ? Colors.grey
+                                        : Colors.transparent),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              disabledBorder: OutlineInputBorder(
+                                borderSide:
+                                    const BorderSide(color: Colors.transparent),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                    );
-                  },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _handleLogout(BuildContext context) async {
+    final result = await AwesomeDialog(
+      context: context,
+      dialogType: DialogType.question,
+      animType: AnimType.bottomSlide,
+      title: 'Logout',
+      desc: 'Are you sure you want to log out?',
+      btnCancelOnPress: () {
+        // Do nothing on cancel
+      },
+      btnOkOnPress: () async {
+        // Clear user data from shared preferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+
+        // Navigate to the login page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      },
+    ).show();
   }
 }

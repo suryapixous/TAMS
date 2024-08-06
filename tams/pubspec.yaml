@@ -25,7 +25,9 @@ dependencies:
   flutter_spinkit: ^5.0.0
   image_cropper: ^1.4.1
   smooth_page_indicator: ^1.2.0+3 # Add the latest version
-
+  shared_preferences: ^2.1.0
+  flutter_native_splash: ^2.0.4  # Check for the latest version on pub.dev
+  lottie: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -39,5 +41,4 @@ flutter:
     - Assets/Images/Python-Intrerview-Q&A-copy.webp
     - Assets/Images/logo-search-grid-2x.png
     - Assets/Images/ali-morshedlou-WMD64tMfc4k-unsplash.jpg
-    - Assets/Images/board.png
-    - Assets/Documents/dummy-pdf_2.pdf
+    - Assets/Images/noticeboard.png

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:animate_do/animate_do.dart'; // Add this dependency for animations
+import 'package:animate_do/animate_do.dart';
+
+import '../../MYcustomWidgets/Constant_page.dart'; // Add this dependency for animations
 
 class HolidayCalendarPage extends StatefulWidget {
   const HolidayCalendarPage({super.key});
@@ -57,19 +59,35 @@ class _HolidayCalendarPageState extends State<HolidayCalendarPage> {
     final primaryColor = Colors.deepPurple; // Use the color you prefer
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Holiday Calendar'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurpleAccent, Colors.deepPurpleAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100.0), // Set the desired height
+        child: AppBar(
+          backgroundColor: appBarColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(30),
             ),
           ),
-          child: Center(),
+          leading: Padding(
+            padding: const EdgeInsets.only(
+                top: 18), // Adjust the top padding value as needed
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          flexibleSpace: Center(
+            child: Text(
+              'Holiday Calendar',
+              style: TextStyle(
+                color: appBarTextColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
       ),
       body: Container(

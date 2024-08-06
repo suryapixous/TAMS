@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart'; // Import this for describeEnum
 import 'package:awesome_dialog/awesome_dialog.dart'; // Import AwesomeDialog
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../../MYcustomWidgets/Constant_page.dart'; // Import SpinKit
+import '../../MYcustomWidgets/Constant_page.dart';
 
 class QrScannerPage extends StatefulWidget {
   @override
@@ -21,11 +21,42 @@ class _QrScannerPageState extends State<QrScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('QR Scanner'),
-        centerTitle: true,
-        backgroundColor: appBarColor,
-        elevation: 0,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100.0), // Set the desired height
+        child: AppBar(
+          backgroundColor: appBarColor, // Replace with your app bar color
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(1),
+            ),
+          ),
+          flexibleSpace: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Empty space to push the title to the center
+                    SizedBox(width: 80), // Adjust width as needed
+
+                    // Title in the center
+                    Text(
+                      'QR Scanner',
+                      style: TextStyle(
+                        color: Colors.white, // Replace with your title color
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    // Action icons on the right (if needed)
+                    SizedBox(width: 64), // Adjust width as needed
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: Stack(
         children: [
@@ -33,7 +64,8 @@ class _QrScannerPageState extends State<QrScannerPage> {
             key: qrKey,
             onQRViewCreated: _onQRViewCreated,
             overlay: QrScannerOverlayShape(
-              borderColor: appBarColor,
+              borderColor:
+                  appBarColor, // Replace with your overlay border color
               borderRadius: 20,
               borderLength: 40,
               borderWidth: 12,
@@ -59,15 +91,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        _handleQRCode(result!.code);
-                      },
-                      child: const Text('Mark Attendance'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: appBarColor,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -75,7 +98,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
           if (isProcessing)
             Center(
               child: SpinKitRipple(
-                color: appBarColor,
+                color: Colors.blue, // Replace with your spinner color
                 size: 80.0,
               ),
             ),

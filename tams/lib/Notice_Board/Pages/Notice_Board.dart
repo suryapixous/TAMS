@@ -9,10 +9,26 @@ class NoticeBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notice Board'),
-        centerTitle: true,
-        backgroundColor: appBarColor,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100.0), // Set the desired height
+        child: AppBar(
+          backgroundColor: appBarColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(30),
+            ),
+          ),
+          flexibleSpace: Center(
+            child: Text(
+              'Notice Board',
+              style: TextStyle(
+                color: appBarTextColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(8.0),

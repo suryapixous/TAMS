@@ -48,91 +48,111 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
     double percentage = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attendance Report'),
-        centerTitle: true,
-        backgroundColor: appBarColor,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            FadeInUp(
-              duration: const Duration(milliseconds: 500),
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  labelText: 'Search by Date',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.search),
-                ),
-                onChanged: _filterRecords,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100.0), // Set the desired height
+        child: AppBar(
+          backgroundColor: appBarColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(30),
+            ),
+          ),
+          flexibleSpace: Center(
+            child: Text(
+              'Attendance Report',
+              style: TextStyle(
+                color: appBarTextColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-            FadeInUp(
-              duration: const Duration(milliseconds: 600),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: _buildCountCard('Present', presentCount,
-                        Colors.green, Icons.check_circle),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildCountCard(
-                        'Absent', absentCount, Colors.red, Icons.cancel),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            FadeInUp(
-              duration: const Duration(milliseconds: 700),
-              child: Center(
-                child: _buildCountCard(
-                    'Late', lateCount, Colors.orange, Icons.access_time),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FadeInUp(
-              duration: const Duration(milliseconds: 800),
-              child: Text(
-                'Attendance Percentage: ${percentage.toStringAsFixed(2)}%',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _filteredRecords.length,
-                itemBuilder: (context, index) {
-                  final record = _filteredRecords[index];
-                  final date = record['date'] as DateTime;
-                  final status = record['status'] as String;
-
-                  return BounceInUp(
-                    duration: const Duration(milliseconds: 800),
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      elevation: 5,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16.0),
-                        title: Text('${date.toLocal()}'),
-                        subtitle: Text('Status: $status'),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(16.0),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                FadeInUp(
+                  duration: const Duration(milliseconds: 500),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      labelText: 'Search by Date',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: _filterRecords,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FadeInUp(
+                  duration: const Duration(milliseconds: 600),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: _buildCountCard('Present', presentCount,
+                            Colors.green, Icons.check_circle),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildCountCard(
+                            'Absent', absentCount, Colors.red, Icons.cancel),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FadeInUp(
+                  duration: const Duration(milliseconds: 700),
+                  child: Center(
+                    child: _buildCountCard(
+                        'Late', lateCount, Colors.orange, Icons.access_time),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FadeInUp(
+                  duration: const Duration(milliseconds: 800),
+                  child: Text(
+                    'Attendance Percentage: ${percentage.toStringAsFixed(2)}%',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ]),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final record = _filteredRecords[index];
+                final date = record['date'] as DateTime;
+                final status = record['status'] as String;
+
+                return BounceInUp(
+                  duration: const Duration(milliseconds: 800),
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16.0),
+                      title: Text('${date.toLocal()}'),
+                      subtitle: Text('Status: $status'),
+                    ),
+                  ),
+                );
+              },
+              childCount: _filteredRecords.length,
+            ),
+          ),
+        ],
       ),
     );
   }

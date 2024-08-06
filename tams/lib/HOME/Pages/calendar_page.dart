@@ -91,13 +91,18 @@ class _CalendarPageState extends State<CalendarPage>
               ),
             ),
           ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+          leading: Padding(
+            padding: const EdgeInsets.only(
+                top: 18), // Adjust the top padding value as needed
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
           ),
-        ), // Set the desired height
+        ),
+// Set the desired height
       ),
       body: Stack(
         children: [

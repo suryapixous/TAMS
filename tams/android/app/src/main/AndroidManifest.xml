@@ -2,7 +2,7 @@
     <application
         android:label="tams"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/icontams">
         <activity
             android:name=".MainActivity"
             android:exported="true"

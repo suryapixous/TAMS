@@ -15,22 +15,47 @@ class Bottombar extends StatefulWidget {
   _BottombarState createState() => _BottombarState();
 }
 
-class _BottombarState extends State<Bottombar> {
-  int _selectedIndex = 0;
+class _BottombarState extends State<Bottombar>
+    with SingleTickerProviderStateMixin {
+  int _selectedIndex = 2;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
 
   // List of pages to display in the bottom bar
   final List<Widget> _pages = [
-    const AttendancePage(),
     const AttendanceReportPage(),
     const NoticeBoard(),
-    const MultimediaPage(), // Add the MultimediaPage
-    const ProfilePage(), // Ensure these pages are defined and imported correctly
+    const AttendancePage(),
+    const MultimediaPage(),
+    const ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      _animationController.forward().then((_) {
+        _animationController.reverse();
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -40,72 +65,86 @@ class _BottombarState extends State<Bottombar> {
       bottomNavigationBar: ConvexAppBar(
         items: [
           TabItem(
-            icon: _buildAnimatedIcon(Icons.home, 'Home', 0),
-            title: 'Home',
+            icon: _buildAnimatedIcon(Icons.analytics, 0),
+            title: _selectedIndex == 0 ? 'Report' : '',
           ),
           TabItem(
-            icon: _buildAnimatedIcon(Icons.analytics, 'Report Page', 1),
-            title: 'Report',
+            icon: _buildAnimatedImageIcon('Assets/Images/noticeboard.png', 1),
+            title: _selectedIndex == 1 ? 'Notice' : '',
           ),
           TabItem(
-            icon: _buildAnimatedImageIcon(
-                'Assets/Images/board.png', 'Notice Board', 2),
-            title: 'Notice',
+            icon: _buildAnimatedIcon(Icons.home, 2),
+            title: _selectedIndex == 2 ? 'Home' : '',
           ),
           TabItem(
-            icon: _buildAnimatedIcon(Icons.perm_media_rounded, 'Multimedia',
-                3), // Add the multimedia icon
-            title: 'Multimedia',
+            icon: _buildAnimatedIcon(Icons.perm_media_rounded, 3),
+            title: _selectedIndex == 3 ? 'Media' : '',
           ),
           TabItem(
             icon: _buildProfileIcon(
-                'Assets/Images/ali-morshedlou-WMD64tMfc4k-unsplash.jpg'), // Replace with your image path
-            title: 'Profile',
+                'Assets/Images/ali-morshedlou-WMD64tMfc4k-unsplash.jpg'),
+            title: _selectedIndex == 4 ? 'Profile' : '',
           ),
         ],
-        initialActiveIndex: _selectedIndex, // optional, default as 0
+        initialActiveIndex: _selectedIndex,
         onTap: _onItemTapped,
-        style: TabStyle.react, // style that gives zoom effect
+        style: TabStyle.react,
         backgroundColor: Colors.white,
         activeColor: Colors.blueAccent,
         color: Colors.grey,
+        elevation: 5, // Add some shadow if needed
       ),
     );
   }
 
-  Widget _buildAnimatedIcon(IconData icon, String title, int index) {
-    return BounceInDown(
-      duration: Duration(milliseconds: 500 * (index + 1)),
-      child: Icon(icon, size: 30),
+  Widget _buildAnimatedIcon(IconData icon, int index) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _selectedIndex == index ? 1.2 + _animation.value * 0.2 : 1.0,
+          child: Icon(icon, size: 30),
+        );
+      },
     );
   }
 
-  Widget _buildAnimatedImageIcon(String imagePath, String title, int index) {
-    return BounceInDown(
-      duration: Duration(milliseconds: 500 * (index + 1)),
-      child: Image.asset(
-        imagePath,
-        width: 24, // Adjust size as needed
-        height: 24, // Adjust size as needed
-      ),
+  Widget _buildAnimatedImageIcon(String imagePath, int index) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _selectedIndex == index ? 1.2 + _animation.value * 0.2 : 1.0,
+          child: Image.asset(
+            imagePath,
+            width: 24,
+            height: 24,
+          ),
+        );
+      },
     );
   }
 
   Widget _buildProfileIcon(String imagePath) {
-    return BounceInDown(
-      duration: const Duration(milliseconds: 500),
-      child: Container(
-        width: 30, // Adjust size as needed
-        height: 30, // Adjust size as needed
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.red, width: 2), // Red border
-          image: DecorationImage(
-            image: AssetImage(imagePath), // Replace with your image path
-            fit: BoxFit.cover,
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _selectedIndex == 4 ? 1.2 + _animation.value * 0.2 : 1.0,
+          child: Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.red, width: 2),
+              image: DecorationImage(
+                image: AssetImage(imagePath),
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
