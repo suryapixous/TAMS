@@ -234,7 +234,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               backgroundColor: Colors.amberAccent,
                             ),
                             child: _isLoading
-                                ? SizedBox(
+                                ? const SizedBox(
                                     width: 24,
                                     height: 24,
                                     child: CircularProgressIndicator(
