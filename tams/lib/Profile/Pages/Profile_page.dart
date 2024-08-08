@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/animation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../Login/Pages/Forget_password.dart';
 import '../../Login/Pages/Login.dart';
 import '../../MYcustomWidgets/Constant_page.dart';
 
@@ -28,7 +29,6 @@ class _ProfilePageState extends State<ProfilePage>
   final List<Map<String, String>> _fieldData = [
     {'label': 'First Name', 'value': 'John'},
     {'label': 'Father Name', 'value': 'Doe'},
-    {'label': 'Gender', 'value': 'Male'},
     {'label': 'District', 'value': 'DistrictName'},
     {'label': 'Postal Code', 'value': '123456'},
     {'label': 'Address', 'value': '123 Main St'},
@@ -39,6 +39,13 @@ class _ProfilePageState extends State<ProfilePage>
 
   late final List<TextEditingController> _controllers;
   late final List<String> _initialValues;
+
+  String? _selectedGender; // Added for gender selection
+  final List<String> _genderOptions = [
+    'Male',
+    'Female',
+    'Other'
+  ]; // Gender options
 
   File? _profileImage;
 
@@ -76,6 +83,9 @@ class _ProfilePageState extends State<ProfilePage>
       });
     }
     _requestPermissions();
+
+    // Initialize gender selection based on the initial values
+    _selectedGender = _fieldData[2]['value']; // Assuming Gender is at index 2
   }
 
   @override
@@ -133,14 +143,18 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _onSave() async {
-    final bool? confirm = await AwesomeDialog(
+    await AwesomeDialog(
       context: context,
       dialogType: DialogType.question,
       animType: AnimType.bottomSlide,
       title: 'Save Changes',
       desc: 'Are you sure you want to save changes?',
       btnCancelOnPress: () {
+        // User pressed cancel, do nothing
         setState(() {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No changes were made.')),
+          );
           _isEditing = false;
         });
       },
@@ -295,92 +309,201 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                 ),
                 const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordPage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontSize: 16,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 Expanded(
                   child: ListView.builder(
                     itemCount: _fieldData.length,
                     itemBuilder: (context, index) {
-                      final label = _fieldData[index]['label']!;
-                      final value = _controllers[index].text;
+                      final field = _fieldData[index];
 
-                      TextInputType keyboardType;
-                      bool isObscure = false;
-                      String? Function(String?)? validator;
-
-                      switch (label) {
-                        case 'Email':
-                          keyboardType = TextInputType.emailAddress;
-                          validator = (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                    .hasMatch(value)) {
-                              return 'Please enter a valid email address';
-                            }
-                            return null;
-                          };
-                          break;
-                        case 'Mobile Number':
-                          keyboardType = TextInputType.phone;
-                          validator = (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                !RegExp(r'^[0-9]{10}$').hasMatch(value)) {
-                              return 'Please enter a valid 10-digit mobile number';
-                            }
-                            return null;
-                          };
-                          break;
-                        case 'Active Status':
-                          keyboardType = TextInputType.text;
-                          break;
-                        default:
-                          keyboardType = TextInputType.text;
+                      if (field['label'] == 'Gender') {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                child: Text(
+                                  'Gender',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedGender ?? _genderOptions[0],
+                                  items: _genderOptions.map((String gender) {
+                                    return DropdownMenuItem<String>(
+                                      value: gender,
+                                      child: Text(gender),
+                                    );
+                                  }).toList(),
+                                  onChanged: _isEditing
+                                      ? (String? newValue) {
+                                          setState(() {
+                                            _selectedGender = newValue;
+                                            _controllers[2].text = newValue!;
+                                          });
+                                        }
+                                      : null,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (field['label'] == 'Email') {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                child: Text(
+                                  field['label']!,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _controllers[index],
+                                  enabled: _isEditing,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    final emailPattern =
+                                        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+                                    final regExp = RegExp(emailPattern);
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter an email';
+                                    } else if (!regExp.hasMatch(value)) {
+                                      return 'Enter a valid email';
+                                    }
+                                    return null; // Valid email
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (field['label'] == 'Postal Code') {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                child: Text(
+                                  field['label']!,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _controllers[index],
+                                  enabled: _isEditing,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 6,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a postal code';
+                                    } else if (value.length != 6) {
+                                      return 'Postal code must be 6 digits';
+                                    }
+                                    return null; // Valid postal code
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (field['label'] == 'Address') {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                child: Text(
+                                  field['label']!,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _controllers[index],
+                                  enabled: _isEditing,
+                                  minLines:
+                                      1, // Minimum number of lines to start with
+                                  maxLines:
+                                      null, // Allows the text field to expand as needed
+                                  keyboardType: TextInputType.multiline,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
                       }
 
-                      return Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: TextFormField(
-                            controller: _controllers[index],
-                            keyboardType: keyboardType,
-                            obscureText: isObscure,
-                            validator: validator,
-                            enabled: _isEditing,
-                            decoration: InputDecoration(
-                              labelText: label,
-                              labelStyle: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 15),
-                              border: InputBorder.none,
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                    color: _isEditing
-                                        ? Colors.blue
-                                        : Colors.transparent),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                    color: _isEditing
-                                        ? Colors.grey
-                                        : Colors.transparent),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              disabledBorder: OutlineInputBorder(
-                                borderSide:
-                                    const BorderSide(color: Colors.transparent),
-                                borderRadius: BorderRadius.circular(10),
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 150,
+                              child: Text(
+                                field['label']!,
+                                style: const TextStyle(fontSize: 16),
                               ),
                             ),
-                          ),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _controllers[index],
+                                enabled: _isEditing &&
+                                    !(field['label'] == 'Active Status' ||
+                                        field['label'] == 'Mobile Number'),
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -394,25 +517,30 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  // Function to clear login state
+  Future<void> clearLoginState() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('isLoggedIn');
+  }
+
+  // Logout button handler
   void _handleLogout(BuildContext context) async {
-    final result = await AwesomeDialog(
+    // Show AwesomeDialog for confirmation
+    final bool? confirm = await AwesomeDialog(
       context: context,
       dialogType: DialogType.question,
       animType: AnimType.bottomSlide,
       title: 'Logout',
       desc: 'Are you sure you want to log out?',
       btnCancelOnPress: () {
-        // Do nothing on cancel
+        // User pressed cancel, do nothing
       },
       btnOkOnPress: () async {
-        // Clear user data from shared preferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.clear();
-
-        // Navigate to the login page
+        // User confirmed logout
+        await clearLoginState();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
+          MaterialPageRoute(builder: (context) => LoginPage()),
         );
       },
     ).show();

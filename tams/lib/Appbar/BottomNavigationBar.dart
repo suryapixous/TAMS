@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
-import 'package:animate_do/animate_do.dart'; // Ensure animate_do package is imported
 import '../HOME/Pages/Home.dart';
-import '../Holiday_calender/Pages/Holiday_calender_page.dart';
 import '../Multimedia_page/Pages/Multimedia_page.dart';
 import '../Notice_Board/Pages/Notice_Board.dart';
 import '../Profile/Pages/Profile_page.dart';
@@ -17,16 +15,15 @@ class Bottombar extends StatefulWidget {
 
 class _BottombarState extends State<Bottombar>
     with SingleTickerProviderStateMixin {
-  int _selectedIndex = 2;
+  int _selectedIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _animation;
 
   // List of pages to display in the bottom bar
   final List<Widget> _pages = [
+    const AttendancePage(),
     const AttendanceReportPage(),
     const NoticeBoard(),
-    const AttendancePage(),
-    const MultimediaPage(),
     const ProfilePage(),
   ];
 
@@ -65,32 +62,29 @@ class _BottombarState extends State<Bottombar>
       bottomNavigationBar: ConvexAppBar(
         items: [
           TabItem(
-            icon: _buildAnimatedIcon(Icons.analytics, 0),
-            title: _selectedIndex == 0 ? 'Report' : '',
+            icon: _buildAnimatedIcon(Icons.home, 0),
+            title: _selectedIndex == 0 ? 'Home' : '',
           ),
           TabItem(
-            icon: _buildAnimatedImageIcon('Assets/Images/noticeboard.png', 1),
-            title: _selectedIndex == 1 ? 'Notice' : '',
+            icon: _buildAnimatedIcon(Icons.analytics, 1),
+            title: _selectedIndex == 1 ? 'Report' : '',
           ),
           TabItem(
-            icon: _buildAnimatedIcon(Icons.home, 2),
-            title: _selectedIndex == 2 ? 'Home' : '',
-          ),
-          TabItem(
-            icon: _buildAnimatedIcon(Icons.perm_media_rounded, 3),
-            title: _selectedIndex == 3 ? 'Media' : '',
+            icon: _buildAnimatedImageIcon('Assets/Images/noticeboard.png', 2),
+            title: _selectedIndex == 2 ? 'Notice' : '',
           ),
           TabItem(
             icon: _buildProfileIcon(
                 'Assets/Images/ali-morshedlou-WMD64tMfc4k-unsplash.jpg'),
-            title: _selectedIndex == 4 ? 'Profile' : '',
+            title: _selectedIndex == 3 ? 'Profile' : '',
           ),
         ],
         initialActiveIndex: _selectedIndex,
         onTap: _onItemTapped,
         style: TabStyle.react,
-        backgroundColor: Colors.white,
-        activeColor: Colors.blueAccent,
+        backgroundColor:
+            Color.fromARGB(150, 255, 255, 255), // Semi-transparent yellow
+        activeColor: Colors.black54,
         color: Colors.grey,
         elevation: 5, // Add some shadow if needed
       ),

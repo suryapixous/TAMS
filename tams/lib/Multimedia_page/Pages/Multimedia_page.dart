@@ -1,6 +1,12 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:dio/dio.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:typed_data';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 import '../../MYcustomWidgets/Constant_page.dart';
 
@@ -19,7 +25,7 @@ class _MultimediaPageState extends State<MultimediaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100.0), // Set the desired height
+        preferredSize: const Size.fromHeight(100.0),
         child: AppBar(
           backgroundColor: appBarColor,
           shape: const RoundedRectangleBorder(
@@ -27,7 +33,7 @@ class _MultimediaPageState extends State<MultimediaPage> {
               bottom: Radius.circular(30),
             ),
           ),
-          flexibleSpace: Center(
+          flexibleSpace: const Center(
             child: Text(
               'Multimedia',
               style: TextStyle(
@@ -62,7 +68,7 @@ class _MultimediaPageState extends State<MultimediaPage> {
               child: SmoothPageIndicator(
                 controller: _pageController,
                 count: 3,
-                effect: ExpandingDotsEffect(
+                effect: const ExpandingDotsEffect(
                   activeDotColor: Colors.blue,
                   dotColor: Colors.grey,
                   dotHeight: 8,
@@ -85,7 +91,6 @@ class _MultimediaPageState extends State<MultimediaPage> {
             'Sample PDF Document 1', Icons.picture_as_pdf, Colors.red),
         _buildListTile(
             'Sample PDF Document 2', Icons.picture_as_pdf, Colors.red),
-        // Add more items here
       ],
     );
   }
@@ -96,12 +101,20 @@ class _MultimediaPageState extends State<MultimediaPage> {
       children: [
         _buildListTile('Sample Document 1', Icons.description, Colors.green),
         _buildListTile('Sample Document 2', Icons.description, Colors.green),
-        // Add more items here
       ],
     );
   }
 
   Widget _buildImageListPage() {
+    final List<String> imageUrls = [
+      'https://image.slidesharecdn.com/what-is-python-presentation-230326123553-7e24f9d9/75/what-is-python-presentation-pptx-1-2048.jpg',
+      'https://files.prepinsta.com/2020/07/Ppython-process.webp',
+      'https://images.clickittech.com/2020/wp-content/uploads/2022/08/17215849/Python-framework-44-1.jpg',
+      'https://www.altamira.ai/wp-content/uploads/2019/10/KIhY-nnA.png',
+      'https://files.prepinsta.com/2020/07/Ppython-process.webp',
+      // Add more image URLs here
+    ];
+
     return GridView.builder(
       padding: const EdgeInsets.all(16.0),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -109,13 +122,46 @@ class _MultimediaPageState extends State<MultimediaPage> {
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
       ),
-      itemCount: 10, // Number of images
+      itemCount: imageUrls.length,
       itemBuilder: (context, index) {
-        return Card(
-          elevation: 5,
-          child: Image.asset(
-            'assets/images/sample_image_${index + 1}.png', // Replace with your image paths
-            fit: BoxFit.cover,
+        String imageUrl = imageUrls[index];
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ImageDetailView(
+                  imageUrl: imageUrl,
+                  onDownload: () => _downloadImage(imageUrl), // Fixed this line
+                ),
+              ),
+            );
+          },
+          child: Card(
+            elevation: 5,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                loadingBuilder: (BuildContext context, Widget child,
+                    ImageChunkEvent? loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              (loadingProgress.expectedTotalBytes ?? 1)
+                          : null,
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(child: Icon(Icons.error));
+                },
+              ),
+            ),
           ),
         );
       },
@@ -139,6 +185,100 @@ class _MultimediaPageState extends State<MultimediaPage> {
             // Implement navigation or functionality
           },
         ),
+      ),
+    );
+  }
+
+  Future<void> _downloadImage(String url) async {
+    final plugin = DeviceInfoPlugin();
+    final android = await plugin.androidInfo;
+
+    final status = android.version.sdkInt < 33
+        ? await Permission.storage.request()
+        : PermissionStatus.granted;
+    final status1 = Permission.photos.request();
+    if (status.isGranted) {
+      try {
+        var response = await Dio().get(
+          url,
+          options: Options(responseType: ResponseType.bytes),
+        );
+
+        // Save the image to the gallery
+        final result = await ImageGallerySaver.saveImage(
+          Uint8List.fromList(response.data),
+          quality: 60,
+          name: 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+
+        if (result['isSuccess']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image saved to gallery')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to save image')),
+          );
+        }
+      } catch (e) {
+        print("Download error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error downloading image: $e')),
+        );
+      }
+    } else if (status.isDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Storage permission is required to save images.'),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: () {
+              openAppSettings(); // Open app settings
+            },
+          ),
+        ),
+      );
+    } else if (status.isPermanentlyDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enable storage permission in settings.'),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: () {
+              openAppSettings(); // Open app settings
+            },
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class ImageDetailView extends StatelessWidget {
+  final String imageUrl;
+  final VoidCallback onDownload;
+
+  const ImageDetailView({
+    Key? key,
+    required this.imageUrl,
+    required this.onDownload,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Image Detail'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: onDownload,
+          ),
+        ],
+      ),
+      body: PhotoView(
+        imageProvider: NetworkImage(imageUrl),
+        heroAttributes: const PhotoViewHeroAttributes(tag: "imageHero"),
       ),
     );
   }

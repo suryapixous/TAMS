@@ -15,8 +15,21 @@ class _QrScannerPageState extends State<QrScannerPage> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? controller;
   Barcode? result;
-  bool isScanning = true;
   bool isProcessing = false; // Added state for processing
+
+  @override
+  void initState() {
+    super.initState();
+    // Start the QR scanner and set a timer to close it after 4 seconds
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      Future.delayed(Duration(seconds: 4), () {
+        if (result == null && !isProcessing) {
+          _showErrorDialog();
+        }
+        controller?.dispose(); // Close the scanner
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +56,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                     Text(
                       'QR Scanner',
                       style: TextStyle(
-                        color: Colors.white, // Replace with your title color
+                        color: appBarTextColor, // Replace with your title color
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -72,29 +85,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
               cutOutSize: MediaQuery.of(context).size.width * 0.75,
             ),
           ),
-          if (result != null &&
-              !isProcessing) // Show result container only if not processing
-            Center(
-              child: Container(
-                color: Colors.black.withOpacity(0.6),
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Barcode Type: ${describeEnum(result!.format)}',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Data: ${result!.code}',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            ),
           if (isProcessing)
             Center(
               child: SpinKitRipple(
@@ -114,20 +104,17 @@ class _QrScannerPageState extends State<QrScannerPage> {
     controller.scannedDataStream.listen((scanData) {
       setState(() {
         result = scanData;
-        isScanning = false;
         isProcessing = true; // Start showing loading animation
       });
       controller.pauseCamera(); // Pause the camera after a successful scan
 
-      // Simulate processing time and show the dialog afterward
-      Future.delayed(Duration(seconds: 2), () {
-        _handleQRCode(result!.code);
-      });
+      // Handle the QR code and close the scanner
+      _handleQRCode(result!.code);
     });
   }
 
   void _handleQRCode(String? code) {
-    if (code != null && code.toLowerCase() == 'surya') {
+    if (code != null) {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.success,
@@ -140,22 +127,29 @@ class _QrScannerPageState extends State<QrScannerPage> {
         headerAnimationLoop: false, // No tick symbol
       ).show();
     } else {
-      AwesomeDialog(
-        context: context,
-        dialogType: DialogType.error,
-        title: 'Failed',
-        desc: 'Invalid QR code!',
-        btnOkOnPress: () {
-          Navigator.pop(context, false); // Return false to indicate failure
-        },
-        btnOkColor: Theme.of(context).colorScheme.primary,
-      ).show();
+      _showErrorDialog();
     }
 
     // Stop showing the loading animation
     setState(() {
       isProcessing = false;
     });
+
+    // Dispose the controller to close the scanner
+    controller?.dispose();
+  }
+
+  void _showErrorDialog() {
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.error,
+      title: 'Failed',
+      desc: 'Invalid QR code!',
+      btnOkOnPress: () {
+        Navigator.pop(context, false); // Return false to indicate failure
+      },
+      btnOkColor: Theme.of(context).colorScheme.primary,
+    ).show();
   }
 
   @override

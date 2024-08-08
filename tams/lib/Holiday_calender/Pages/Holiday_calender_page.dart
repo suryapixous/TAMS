@@ -54,6 +54,13 @@ class _HolidayCalendarPageState extends State<HolidayCalendarPage> {
     };
   }
 
+  Future<void> _refreshCalendar() async {
+    setState(() {
+      _selectedDay = DateTime.now();
+      _focusedDay = DateTime.now();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = Colors.deepPurple; // Use the color you prefer
@@ -90,83 +97,82 @@ class _HolidayCalendarPageState extends State<HolidayCalendarPage> {
           ),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.white.withOpacity(0.8), Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(16.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6.0,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TableCalendar(
-                  focusedDay: _focusedDay,
-                  firstDay: DateTime(2020),
-                  lastDay: DateTime(2030),
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                  onDaySelected: (selectedDay, focusedDay) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-                  },
-                  eventLoader: (day) {
-                    return _holidays[DateTime(day.year, day.month, day.day)] ??
-                        [];
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    markerBuilder: (context, date, events) {
-                      if (events.isNotEmpty) {
-                        return _buildHolidayMarker();
-                      }
-                      return null;
+      body: RefreshIndicator(
+        onRefresh: _refreshCalendar,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 6.0,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TableCalendar(
+                    focusedDay: _focusedDay,
+                    firstDay: DateTime(2020),
+                    lastDay: DateTime(2030),
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
                     },
-                  ),
-                  calendarStyle: CalendarStyle(
-                    todayDecoration: BoxDecoration(
-                      color: primaryColor,
-                      shape: BoxShape.circle,
+                    eventLoader: (day) {
+                      return _holidays[
+                              DateTime(day.year, day.month, day.day)] ??
+                          [];
+                    },
+                    calendarBuilders: CalendarBuilders(
+                      markerBuilder: (context, date, events) {
+                        if (events.isNotEmpty) {
+                          return _buildHolidayMarker(
+                              date); // Pass the date to the method
+                        }
+                        return null;
+                      },
                     ),
-                    selectedDecoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.7),
-                      shape: BoxShape.circle,
+                    calendarStyle: CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.7),
+                        shape: BoxShape.circle,
+                      ),
+                      holidayTextStyle: TextStyle(color: Colors.green),
                     ),
-                    holidayTextStyle: TextStyle(color: Colors.green),
-                  ),
-                  headerStyle: HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                    titleTextStyle:
-                        const TextStyle(color: Colors.white, fontSize: 20.0),
-                    leftChevronIcon:
-                        const Icon(Icons.chevron_left, color: Colors.white),
-                    rightChevronIcon:
-                        const Icon(Icons.chevron_right, color: Colors.white),
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                      titleTextStyle:
+                          const TextStyle(color: Colors.black, fontSize: 20.0),
+                      leftChevronIcon:
+                          const Icon(Icons.chevron_left, color: Colors.black),
+                      rightChevronIcon:
+                          const Icon(Icons.chevron_right, color: Colors.black),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Visibility(
-              visible: _showHolidayList,
-              child: Expanded(
+              Visibility(
+                visible: _showHolidayList,
                 child: FadeInUp(
                   duration: Duration(milliseconds: 500),
                   child: ListView(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16.0),
                     children: _holidays.entries.map((entry) {
                       return _buildHolidayTile(entry.key, entry.value.first);
@@ -174,8 +180,8 @@ class _HolidayCalendarPageState extends State<HolidayCalendarPage> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -185,19 +191,30 @@ class _HolidayCalendarPageState extends State<HolidayCalendarPage> {
           });
         },
         child: Icon(_showHolidayList ? Icons.close : Icons.list),
-        backgroundColor: primaryColor,
+        backgroundColor: Colors.white,
       ),
     );
   }
 
-  Widget _buildHolidayMarker() {
+  Widget _buildHolidayMarker(DateTime date) {
+    final day = date.day;
+
     return Container(
       margin: const EdgeInsets.all(4.0),
-      width: 10,
-      height: 10,
-      decoration: const BoxDecoration(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.green,
+      ),
+      child: Center(
+        child: Text(
+          '$day',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
@@ -226,7 +243,7 @@ class _HolidayCalendarPageState extends State<HolidayCalendarPage> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(holiday),
-        leading: Icon(Icons.calendar_today, color: Colors.purple),
+        leading: Icon(Icons.calendar_today, color: Colors.black54),
       ),
     );
   }

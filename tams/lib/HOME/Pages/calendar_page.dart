@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../MYcustomWidgets/Constant_page.dart';
-import 'qr_scanner_page.dart'; // Import the QR scanner page
+import '../../Multimedia_page/Pages/Multimedia_page.dart';
+import 'qr_scanner_page.dart';
 
 class CalendarPage extends StatefulWidget {
   final String selectedCourse;
@@ -15,38 +16,18 @@ class CalendarPage extends StatefulWidget {
   _CalendarPageState createState() => _CalendarPageState();
 }
 
-class _CalendarPageState extends State<CalendarPage>
-    with SingleTickerProviderStateMixin {
+class _CalendarPageState extends State<CalendarPage> {
   DateTime _selectedDate = DateTime.now();
   final DateTime _currentDate = DateTime.now();
   late Map<DateTime, String> _statusMap;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  bool _showTutorial = true; // Flag to control the visibility of the tutorial
 
   @override
   void initState() {
     super.initState();
     _updateStatusMap();
-
-    // Initialize the AnimationController
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    );
-    _fadeAnimation =
-        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
-
-    // Start the animation
-    if (_showTutorial) {
-      _animationController.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showCustomDialog(context); // Show dialog after the widget is built
+    });
   }
 
   void _updateStatusMap() {
@@ -66,6 +47,7 @@ class _CalendarPageState extends State<CalendarPage>
     await Future.delayed(const Duration(seconds: 1));
     setState(() {
       _updateStatusMap(); // Refresh status map or update it with new data
+      _selectedDate = _currentDate; // Set the selected date to current date
     });
   }
 
@@ -83,7 +65,7 @@ class _CalendarPageState extends State<CalendarPage>
           ),
           flexibleSpace: Center(
             child: Text(
-              'Calendar - ${widget.selectedCourse}',
+              '${widget.selectedCourse}',
               style: TextStyle(
                 color: appBarTextColor,
                 fontSize: 24,
@@ -101,79 +83,86 @@ class _CalendarPageState extends State<CalendarPage>
               },
             ),
           ),
-        ),
-// Set the desired height
-      ),
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: _refreshCalendar,
-            child: ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                const SizedBox(height: 16.0),
-                TableCalendar(
-                  focusedDay: _selectedDate,
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2030, 12, 31),
-                  onDaySelected: (selectedDay, focusedDay) {
-                    setState(() {
-                      _selectedDate = selectedDay;
-                    });
-                    if (isSameDay(selectedDay, _currentDate)) {
-                      _openQrScanner();
-                    }
-                  },
-                  selectedDayPredicate: (day) {
-                    return isSameDay(_selectedDate, day);
-                  },
-                  calendarStyle: CalendarStyle(
-                    selectedDecoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    todayDecoration: BoxDecoration(
-                      color: Colors.orangeAccent,
-                      shape: BoxShape.circle,
-                    ),
-                    todayTextStyle: const TextStyle(color: Colors.white),
-                    defaultDecoration: BoxDecoration(
-                      color: Colors.blueGrey[50],
-                      shape: BoxShape.circle,
-                    ),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(
+                  Icons.photo_library), // Replace with your multimedia icon
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        MultimediaPage(), // Navigate to MultimediaPage
                   ),
-                  calendarBuilders: CalendarBuilders(
-                    defaultBuilder: (context, day, focusedDay) {
-                      final status = _statusMap[day] ?? 'none';
-                      return _buildCustomDateWidget(day, status);
-                    },
-                  ),
-                  headerStyle: HeaderStyle(
-                    formatButtonVisible: false,
-                    titleTextStyle: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    titleCentered: true,
-                    leftChevronIcon: Icon(
-                      Icons.chevron_left,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    rightChevronIcon: Icon(
-                      Icons.chevron_right,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
-          ),
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: _showTutorial ? _buildTutorialOverlay() : SizedBox.shrink(),
-          ),
-        ],
+            const SizedBox(width: 20), // Optional spacing
+          ],
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshCalendar,
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            const SizedBox(height: 16.0),
+            TableCalendar(
+              focusedDay: _selectedDate,
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDate = selectedDay;
+                });
+                if (isSameDay(selectedDay, _currentDate)) {
+                  _openQrScanner();
+                }
+              },
+              selectedDayPredicate: (day) {
+                return isSameDay(_selectedDate, day);
+              },
+              calendarStyle: CalendarStyle(
+                selectedDecoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: Colors.orangeAccent,
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: const TextStyle(color: Colors.white),
+                defaultDecoration: BoxDecoration(
+                  color: Colors.blueGrey[50],
+                  shape: BoxShape.circle,
+                ),
+              ),
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, focusedDay) {
+                  final status = _statusMap[day] ?? 'none';
+                  return _buildCustomDateWidget(day, status);
+                },
+              ),
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleTextStyle: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+                titleCentered: true,
+                leftChevronIcon: Icon(
+                  Icons.chevron_left,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -204,48 +193,8 @@ class _CalendarPageState extends State<CalendarPage>
         child: Text(
           '${date.day}',
           style: TextStyle(
-            color: Colors.grey,
+            color: Colors.black54,
             fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTutorialOverlay() {
-    return Positioned(
-      top: 100,
-      left: MediaQuery.of(context).size.width * 0.1,
-      right: MediaQuery.of(context).size.width * 0.1,
-      child: Material(
-        color: Colors.black.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(8.0),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Click your today\'s date',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: () {
-                  _animationController.reverse().then((_) {
-                    setState(() {
-                      _showTutorial = false;
-                    });
-                  });
-                },
-                child: const Text('Got it'),
-              ),
-            ],
           ),
         ),
       ),
@@ -267,4 +216,45 @@ class _CalendarPageState extends State<CalendarPage>
       });
     }
   }
+
+  bool isSameDay(DateTime day1, DateTime day2) {
+    return day1.year == day2.year &&
+        day1.month == day2.month &&
+        day1.day == day2.day;
+  }
+}
+
+Future<void> showCustomDialog(BuildContext context) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false, // User must tap a button to close the dialog
+    builder: (BuildContext context) {
+      return AnimatedScale(
+        scale: 1.0,
+        duration: const Duration(milliseconds: 300),
+        child: AlertDialog(
+          contentPadding: const EdgeInsets.all(16.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          title: Text(
+            'Tap on the current date to scan the QR code.',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Got It'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

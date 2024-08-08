@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../MYcustomWidgets/Constant_page.dart';
+import '../../Notification/Pages/Noification_Page.dart';
 import 'calendar_page.dart'; // Import the CalendarPage class
 import '../../Holiday_calender/Pages/Holiday_calender_page.dart';
 
@@ -31,13 +32,12 @@ class _AttendancePageState extends State<AttendancePage> {
 
   @override
   Widget build(BuildContext context) {
-    final Color appBarColor = Theme.of(context)
-        .colorScheme
-        .primary; // Define app bar color using theme
-    const Color appBarTextColor = Colors.white; // Define app bar text color
+    final Color appBarColor = Theme.of(context).colorScheme.primary;
+    const Color appBarTextColor = Colors.white;
+    final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(screenWidth),
       body: Column(
         children: [
           // Search Box
@@ -49,6 +49,7 @@ class _AttendancePageState extends State<AttendancePage> {
                 hintText: 'Search...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: appBarColor),
                 ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
@@ -78,7 +79,7 @@ class _AttendancePageState extends State<AttendancePage> {
                 ),
                 Positioned(
                   bottom: 16,
-                  right: 16,
+                  right: 19,
                   child: FloatingActionButton(
                     onPressed: () {
                       setState(() {
@@ -87,9 +88,9 @@ class _AttendancePageState extends State<AttendancePage> {
                     },
                     child: Icon(
                       _isGridView ? Icons.list : Icons.grid_view,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
-                    backgroundColor: appBarColor,
+                    backgroundColor: Colors.white,
                   ),
                 ),
               ],
@@ -100,9 +101,9 @@ class _AttendancePageState extends State<AttendancePage> {
     );
   }
 
-  PreferredSize _buildAppBar() {
+  PreferredSize _buildAppBar(double screenWidth) {
     return PreferredSize(
-      preferredSize: const Size.fromHeight(100.0), // Set the desired height
+      preferredSize: const Size.fromHeight(100.0),
       child: AppBar(
         backgroundColor: appBarColor,
         shape: const RoundedRectangleBorder(
@@ -110,94 +111,87 @@ class _AttendancePageState extends State<AttendancePage> {
             bottom: Radius.circular(30),
           ),
         ),
-        flexibleSpace: Column(
+        flexibleSpace: Stack(
           children: [
-            Expanded(
+            // Centered Text
+            Center(
+              child: Text(
+                'Attendance',
+                style: TextStyle(
+                  color: appBarTextColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            // Icons Row
+            Positioned(
+              right: 0,
+              left: 20,
+              top: 0,
+              bottom: 0,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // Empty space to push the title to the center
-                  SizedBox(width: 100), // Adjust width as needed
-
-                  // Title in the center
-                  Text(
-                    'Attendance',
-                    style: TextStyle(
-                      color: appBarTextColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  IconButton(
+                    iconSize: 20, // Decrease icon size
+                    color: Colors.black,
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HolidayCalendarPage(),
+                        ),
+                      );
+                    },
                   ),
-
-                  // Action icons on the right
-                  Row(
+                  Stack(
                     children: [
                       IconButton(
+                        iconSize: 20, // Decrease icon size
                         color: Colors.black,
-                        icon: const Icon(Icons.calendar_today),
+                        icon: const Icon(Icons.notifications),
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const HolidayCalendarPage(),
+                              builder: (context) => NotificationPage(),
                             ),
                           );
                         },
                       ),
-                      Stack(
-                        children: [
-                          IconButton(
-                            color: Colors.black,
-                            icon: const Icon(Icons.notifications),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Notifications'),
-                                  content: const Text('No new notifications.'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          if (_notificationCount > 0)
-                            Positioned(
-                              right: 6,
-                              top: 6,
-                              child: Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 6.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 20,
-                                  minHeight: 20,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '$_notificationCount',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                      if (_notificationCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 6,
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 6.0),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 20,
+                              minHeight: 20,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$_notificationCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(width: 16),
+                          ),
+                        ),
                     ],
                   ),
+                  const SizedBox(
+                      width: 8), // Decreased the width for closer placement
                 ],
               ),
             ),
@@ -228,32 +222,33 @@ class _AttendancePageState extends State<AttendancePage> {
         filteredCourses.length,
         (index) {
           return BounceInUp(
-            key: ValueKey(
-                filteredCourses[index]), // Key required for ReorderableListView
+            key: ValueKey(filteredCourses[index]),
             duration: const Duration(milliseconds: 500),
             child: Card(
-              elevation: 5,
+              elevation: 8, // Increased elevation for a more pronounced shadow
               margin: const EdgeInsets.symmetric(vertical: 8.0),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16), // More rounded corners
               ),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      appBarColor.withOpacity(0.2),
-                      Colors.purpleAccent.withOpacity(0.1)
+                      Colors.white
+                          .withOpacity(0.3), // Lighter shade for the card
+                      Colors.white.withOpacity(0.2)
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16.0),
                   leading: Icon(
-                    Icons.book,
-                    color: appBarColor,
+                    Icons.local_library_rounded,
+                    color: Colors.black54,
+                    size: 30, // Larger icon for better visibility
                   ),
                   title: Text(
                     filteredCourses[index],
@@ -262,7 +257,7 @@ class _AttendancePageState extends State<AttendancePage> {
                   ),
                   trailing: Icon(
                     Icons.arrow_forward_ios,
-                    color: appBarColor,
+                    color: Colors.blueGrey,
                   ),
                   onTap: () {
                     Navigator.push(
@@ -292,31 +287,31 @@ class _AttendancePageState extends State<AttendancePage> {
     return GridView.builder(
       padding: const EdgeInsets.all(16.0),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 1.7, // Adjusted aspect ratio for larger boxes
+        childAspectRatio: MediaQuery.of(context).size.width > 600 ? 0.8 : 1.0,
       ),
       itemCount: filteredCourses.length,
       itemBuilder: (context, index) {
         return BounceInUp(
           duration: const Duration(milliseconds: 500),
           child: Card(
-            elevation: 5,
+            elevation: 8,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    appBarColor.withOpacity(0.2),
-                    Colors.purpleAccent.withOpacity(0.1)
+                    Colors.white.withOpacity(0.3),
+                    Colors.white.withOpacity(0.2)
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: InkWell(
                 onTap: () {
@@ -329,21 +324,33 @@ class _AttendancePageState extends State<AttendancePage> {
                     ),
                   );
                 },
-                child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.book,
-                        color: appBarColor,
-                        size: 40,
+                      Flexible(
+                        flex: 3,
+                        child: Icon(
+                          Icons.local_library_rounded,
+                          color: Colors.black54,
+                          size: 50,
+                        ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        filteredCourses[index],
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
-                        textAlign: TextAlign.center,
+                      Flexible(
+                        flex: 2,
+                        child: Text(
+                          filteredCourses[index],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2, // Allow text to wrap to a second line
+                          overflow: TextOverflow
+                              .ellipsis, // Truncate with ellipsis if text exceeds two lines
+                        ),
                       ),
                     ],
                   ),

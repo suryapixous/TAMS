@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../MYcustomWidgets/Customwidgets.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -13,6 +12,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController _mobileController = TextEditingController();
   final List<TextEditingController> _otpControllers =
       List.generate(6, (_) => TextEditingController());
+  final TextEditingController _postalCodeController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -25,13 +25,30 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   void dispose() {
     _mobileController.dispose();
     _otpControllers.forEach((controller) => controller.dispose());
+    _postalCodeController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  bool _isMobileValid() {
+    return _mobileController.text.length == 10;
+  }
+
+  bool _isOtpValid() {
+    String otp = _otpControllers.map((controller) => controller.text).join();
+    return otp.length == 6;
+  }
+
   void _sendOtp() async {
     final mobile = _mobileController.text;
+    if (!_isMobileValid()) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text('Please enter a valid 10-digit mobile number.'),
+          backgroundColor: Colors.red));
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -58,6 +75,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   void _verifyOtp() async {
     final otp = _otpControllers.map((controller) => controller.text).join();
+    if (!_isOtpValid()) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text('Please enter a valid 6-digit OTP.'),
+          backgroundColor: Colors.red));
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -182,14 +206,28 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           TextField(
                             controller: _mobileController,
                             keyboardType: TextInputType.phone,
+                            maxLength: 10,
                             decoration: InputDecoration(
                               labelText: 'Mobile Number',
                               border: OutlineInputBorder(),
                             ),
+                            onChanged: (value) {
+                              setState(() {});
+                              if (value.length > 10) {
+                                _mobileController.text = value.substring(0, 10);
+                                _mobileController.selection =
+                                    TextSelection.fromPosition(
+                                  TextPosition(
+                                      offset: _mobileController.text.length),
+                                );
+                              }
+                            },
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton(
-                            onPressed: _isLoading ? null : _sendOtp,
+                            onPressed: _isLoading || !_isMobileValid()
+                                ? null
+                                : _sendOtp,
                             style: ElevatedButton.styleFrom(
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(20),
@@ -223,15 +261,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                     maxLength: 1,
                                     decoration: InputDecoration(
                                       border: InputBorder.none,
-                                      counterText:
-                                          '', // Hides the character counter (e.g., 0/1)
-                                      hintText:
-                                          '', // Ensure no hint text is displayed
+                                      counterText: '',
+                                      hintText: '',
                                     ),
                                     textAlign: TextAlign.center,
                                     onChanged: (value) {
                                       if (value.length == 1) {
                                         FocusScope.of(context).nextFocus();
+                                        setState(() {});
                                       }
                                     },
                                   ),
@@ -241,7 +278,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton(
-                            onPressed: _isLoading ? null : _verifyOtp,
+                            onPressed: _isLoading || !_isOtpValid()
+                                ? null
+                                : _verifyOtp,
                             style: ElevatedButton.styleFrom(
                               shape: const CircleBorder(),
                               padding: const EdgeInsets.all(20),
