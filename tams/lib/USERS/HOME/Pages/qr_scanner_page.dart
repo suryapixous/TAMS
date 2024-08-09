@@ -3,8 +3,7 @@ import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:flutter/foundation.dart'; // Import this for describeEnum
 import 'package:awesome_dialog/awesome_dialog.dart'; // Import AwesomeDialog
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-
-import '../../MYcustomWidgets/Constant_page.dart';
+import '../../../Public/MYcustomWidgets/Constant_page.dart';
 
 class QrScannerPage extends StatefulWidget {
   @override

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Splash_screen/splash_screen_pge.dart';
+import 'Public/Splash_screen/splash_screen_pge.dart';
 
 void main() {
   runApp(const MyApp());

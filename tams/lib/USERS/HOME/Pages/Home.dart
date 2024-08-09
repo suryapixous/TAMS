@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import '../../MYcustomWidgets/Constant_page.dart';
-import '../../Notification/Pages/Noification_Page.dart';
+import '../../../Public/MYcustomWidgets/Constant_page.dart';
+import '../../../Public/Notification/Pages/Noification_Page.dart';
 import 'calendar_page.dart'; // Import the CalendarPage class
 import '../../Holiday_calender/Pages/Holiday_calender_page.dart';
 
