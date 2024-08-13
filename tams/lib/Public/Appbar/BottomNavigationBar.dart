@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../ADMIN/Admin_Report_Course.dart';
 import '../../USERS/HOME/Pages/Home.dart';
 import '../../USERS/Notice_Board/Pages/Notice_Board.dart';
+import '../../USERS/People_List/Pages/People_list.dart';
 import '../../USERS/Report_Page/Pages/Report_page.dart';
 import '../Profile/Pages/Profile_page.dart';
 
 class Bottombar extends StatefulWidget {
-  const Bottombar({super.key});
+  final bool isAdmin; // Add a flag to determine if the user is an admin
+
+  const Bottombar({super.key, required this.isAdmin});
 
   @override
   _BottombarState createState() => _BottombarState();
@@ -17,14 +22,6 @@ class _BottombarState extends State<Bottombar>
   int _selectedIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _animation;
-
-  // List of pages to display in the bottom bar
-  final List<Widget> _pages = [
-    const AttendancePage(),
-    const AttendanceReportPage(),
-    const NoticeBoard(),
-    const ProfilePage(),
-  ];
 
   @override
   void initState() {
@@ -49,13 +46,15 @@ class _BottombarState extends State<Bottombar>
   }
 
   @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Update the pages list based on user role
+    final List<Widget> _pages = [
+      AttendancePage(isAdmin: widget.isAdmin), // Pass isAdmin parameter
+      widget.isAdmin ? const AttendanceReportPageAdmin() : PeopleListPage(),
+      const NoticeBoard(),
+      const ProfilePage(),
+    ];
+
     return Scaffold(
       body: _pages[_selectedIndex], // Display the selected page
       bottomNavigationBar: ConvexAppBar(
@@ -65,8 +64,13 @@ class _BottombarState extends State<Bottombar>
             title: _selectedIndex == 0 ? 'Home' : '',
           ),
           TabItem(
-            icon: _buildAnimatedIcon(Icons.analytics, 1),
-            title: _selectedIndex == 1 ? 'Report' : '',
+            icon: _buildAnimatedIcon(
+              widget.isAdmin ? Icons.analytics : Icons.people,
+              1,
+            ),
+            title: _selectedIndex == 1
+                ? (widget.isAdmin ? 'Report' : 'People')
+                : '',
           ),
           TabItem(
             icon: _buildAnimatedImageIcon('Assets/Images/noticeboard.png', 2),
@@ -82,7 +86,7 @@ class _BottombarState extends State<Bottombar>
         onTap: _onItemTapped,
         style: TabStyle.react,
         backgroundColor:
-            Color.fromARGB(150, 255, 255, 255), // Semi-transparent yellow
+            const Color.fromARGB(150, 255, 255, 255), // Semi-transparent
         activeColor: Colors.black54,
         color: Colors.grey,
         elevation: 5, // Add some shadow if needed
@@ -123,7 +127,7 @@ class _BottombarState extends State<Bottombar>
       animation: _animation,
       builder: (context, child) {
         return Transform.scale(
-          scale: _selectedIndex == 4 ? 1.2 + _animation.value * 0.2 : 1.0,
+          scale: _selectedIndex == 3 ? 1.2 + _animation.value * 0.2 : 1.0,
           child: Container(
             width: 30,
             height: 30,

@@ -205,6 +205,7 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           actions: [
             IconButton(
+              color: appBarTextColor,
               icon: const Icon(Icons.logout),
               onPressed: () => _handleLogout(context),
             )

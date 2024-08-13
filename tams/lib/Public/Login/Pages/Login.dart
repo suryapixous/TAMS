@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tams/Public/Appbar/BottomNavigationBar.dart';
 import 'package:tams/Public/Login/Pages/Forget_password.dart';
 import 'package:tams/Public/MYcustomWidgets/Customwidgets.dart';
@@ -28,11 +28,19 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final bool? isLoggedIn = prefs.getBool('isLoggedIn');
+    final String userRole =
+        prefs.getString('userRole') ?? 'user'; // Retrieve stored user role
+
     if (isLoggedIn == true) {
-      // Navigate to the next page if already logged in
+      final bool isAdmin = userRole == 'admin'; // Check if the role is 'admin'
+
+      // Navigate to the Bottombar page, passing the isAdmin parameter
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Bottombar()),
+        MaterialPageRoute(
+          builder: (context) =>
+              Bottombar(isAdmin: isAdmin), // Pass isAdmin here
+        ),
       );
     }
   }
@@ -44,7 +52,6 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // Function to handle login logic
   void _login() async {
     final username = _usernameController.text;
     final password = _passwordController.text;
@@ -54,20 +61,26 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     // Hit API with username and password
-    final isSuccess = await _apiService.hitLoginApi(username, password);
+    final loginResult = await _apiService.hitLoginApi(username, password);
 
     setState(() {
       _isLoading = false; // Stop loading animation
     });
 
-    if (isSuccess) {
+    if (loginResult == 'user' || loginResult == 'admin') {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true); // Save login status
+      await prefs.setString('userRole', loginResult); // Save user role
+
+      final bool isAdmin = loginResult == 'admin';
 
       // Navigate to the next page if login is successful
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Bottombar()),
+        MaterialPageRoute(
+          builder: (context) =>
+              Bottombar(isAdmin: isAdmin), // Pass the isAdmin parameter
+        ),
       );
     } else {
       // Show an error message if login is unsuccessful with a delay

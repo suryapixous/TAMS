@@ -32,6 +32,7 @@ dependencies:
   image_gallery_saver: ^2.0.3
   path_provider: ^2.0.11
   path: ^1.8.3
+  intl: ^0.17.0
 
 
 dev_dependencies:
@@ -48,3 +49,4 @@ flutter:
     - Assets/Images/ali-morshedlou-WMD64tMfc4k-unsplash.jpg
     - Assets/Images/noticeboard.png
     - Assets/Images/sih2024-problem-statement-live.png
+    - Assets/Images/messenger.png

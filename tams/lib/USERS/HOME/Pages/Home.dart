@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../Public/MYcustomWidgets/Constant_page.dart';
 import '../../../Public/Notification/Pages/Noification_Page.dart';
-import 'calendar_page.dart'; // Import the CalendarPage class
 import '../../Holiday_calender/Pages/Holiday_calender_page.dart';
+import '../../Message_Page/Pages/Chat_list_page.dart';
+import '../../Notice_Board/Pages/Notice_Board.dart';
+import '../../Report_Page/Pages/Report_page.dart';
+import 'calendar_page.dart'; // Import the CalendarPage class
 
 class AttendancePage extends StatefulWidget {
-  const AttendancePage({super.key});
+  final bool isAdmin; // Add a flag to determine if the user is an admin
+
+  const AttendancePage({super.key, required this.isAdmin});
 
   @override
   _AttendancePageState createState() => _AttendancePageState();
@@ -14,11 +19,16 @@ class AttendancePage extends StatefulWidget {
 
 class _AttendancePageState extends State<AttendancePage> {
   final List<String> _courses = [
-    'Mathematics',
-    'Physics',
-    'Chemistry',
-    'Biology',
-    'Computer Science'
+    'Python',
+    'JavaScript',
+    'Java',
+    'C++',
+    'Dart',
+    'C#',
+    'Ruby',
+    'Swift',
+    'Go',
+    'Kotlin',
   ];
 
   bool _isGridView = false;
@@ -28,6 +38,94 @@ class _AttendancePageState extends State<AttendancePage> {
   Future<void> _refresh() async {
     await Future.delayed(const Duration(seconds: 2));
     // You can implement actual refresh logic here if needed
+  }
+
+  void _showDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Message'),
+          content: const Text('This is a message dialog.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SlideInUp(
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              ListTile(
+                leading: const Icon(Icons.analytics),
+                title: const Text('Report'),
+                onTap: () {
+                  Navigator.pop(context); // Closes the current page (optional)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const AttendanceReportPage()), // Replace with actual `NoticeBoard` page
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.grade),
+                title: const Text('Grades'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement navigation to Grades page
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('People'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement navigation to People page
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.support),
+                title: const Text('Support'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement navigation to Support page
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.card_membership),
+                title: const Text('Certificate'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement navigation to Certificate page
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.video_call),
+                title: const Text('Live Session'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement navigation to Live Session page
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -105,52 +203,62 @@ class _AttendancePageState extends State<AttendancePage> {
     return PreferredSize(
       preferredSize: const Size.fromHeight(100.0),
       child: AppBar(
-        backgroundColor: appBarColor,
+        backgroundColor: appBarColor, // Set AppBar color
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(30),
           ),
         ),
+        leading: !widget.isAdmin
+            ? IconButton(
+                color: appBarTextColor,
+                icon: const Icon(Icons.menu),
+                onPressed: _showMenu,
+              )
+            : null,
         flexibleSpace: Stack(
           children: [
-            // Centered Text
             Center(
               child: Text(
                 'Attendance',
                 style: TextStyle(
-                  color: appBarTextColor,
+                  color: appBarTextColor, // Ensure text color is readable
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            // Icons Row
             Positioned(
               right: 0,
-              left: 20,
               top: 0,
               bottom: 0,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  IconButton(
-                    iconSize: 20, // Decrease icon size
-                    color: Colors.black,
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HolidayCalendarPage(),
-                        ),
-                      );
-                    },
-                  ),
+                  if (!widget.isAdmin) // Only show message icon if not admin
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatListPage(),
+                          ),
+                        );
+                      },
+                      child: Image.asset(
+                        color: appBarTextColor,
+                        'Assets/Images/messenger.png', // Replace with your image path
+                        width: 20,
+                        height: 20,
+                      ),
+                    ),
+                  const SizedBox(width: 1), // Adjust spacing between icons
                   Stack(
                     children: [
                       IconButton(
                         iconSize: 20, // Decrease icon size
-                        color: Colors.black,
+                        color:
+                            appBarTextColor, // Match icon color to AppBar text color
                         icon: const Icon(Icons.notifications),
                         onPressed: () {
                           Navigator.push(
@@ -169,7 +277,8 @@ class _AttendancePageState extends State<AttendancePage> {
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 6.0),
                             decoration: BoxDecoration(
-                              color: Colors.red,
+                              color:
+                                  Colors.redAccent, // Notification badge color
                               borderRadius: BorderRadius.circular(12),
                             ),
                             constraints: const BoxConstraints(
@@ -191,7 +300,7 @@ class _AttendancePageState extends State<AttendancePage> {
                     ],
                   ),
                   const SizedBox(
-                      width: 8), // Decreased the width for closer placement
+                      width: 16), // Additional spacing from right edge
                 ],
               ),
             ),
@@ -207,74 +316,37 @@ class _AttendancePageState extends State<AttendancePage> {
             course.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
 
-    return ReorderableListView(
+    return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      onReorder: (oldIndex, newIndex) {
-        setState(() {
-          if (oldIndex < newIndex) {
-            newIndex--;
-          }
-          final item = _courses.removeAt(oldIndex);
-          _courses.insert(newIndex, item);
-        });
-      },
-      children: List.generate(
-        filteredCourses.length,
-        (index) {
-          return BounceInUp(
-            key: ValueKey(filteredCourses[index]),
-            duration: const Duration(milliseconds: 500),
-            child: Card(
-              elevation: 8, // Increased elevation for a more pronounced shadow
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16), // More rounded corners
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white
-                          .withOpacity(0.3), // Lighter shade for the card
-                      Colors.white.withOpacity(0.2)
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16.0),
-                  leading: Icon(
-                    Icons.local_library_rounded,
-                    color: Colors.black54,
-                    size: 30, // Larger icon for better visibility
-                  ),
-                  title: Text(
-                    filteredCourses[index],
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.blueGrey,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CalendarPage(
-                          selectedCourse: filteredCourses[index],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+      itemCount: filteredCourses.length,
+      itemBuilder: (context, index) {
+        final course = filteredCourses[index];
+        return FadeInUp(
+          duration: Duration(milliseconds: 500 + (index * 100)),
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          );
-        },
-      ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16.0),
+              title: Text(course),
+              trailing: const Icon(Icons.arrow_forward),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CalendarPage(
+                      selectedCourse: course,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -294,6 +366,7 @@ class _AttendancePageState extends State<AttendancePage> {
       ),
       itemCount: filteredCourses.length,
       itemBuilder: (context, index) {
+        final course = filteredCourses[index];
         return BounceInUp(
           duration: const Duration(milliseconds: 500),
           child: Card(
@@ -301,59 +374,45 @@ class _AttendancePageState extends State<AttendancePage> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.3),
-                    Colors.white.withOpacity(0.2)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CalendarPage(
-                        selectedCourse: filteredCourses[index],
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CalendarPage(
+                      selectedCourse: course,
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      flex: 3,
+                      child: Icon(
+                        Icons.local_library_rounded,
+                        color: Colors.black54,
+                        size: 50,
                       ),
                     ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        flex: 3,
-                        child: Icon(
-                          Icons.local_library_rounded,
-                          color: Colors.black54,
-                          size: 50,
+                    const SizedBox(height: 10),
+                    Flexible(
+                      flex: 2,
+                      child: Text(
+                        course,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 10),
-                      Flexible(
-                        flex: 2,
-                        child: Text(
-                          filteredCourses[index],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2, // Allow text to wrap to a second line
-                          overflow: TextOverflow
-                              .ellipsis, // Truncate with ellipsis if text exceeds two lines
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

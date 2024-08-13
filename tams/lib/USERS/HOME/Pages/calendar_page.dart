@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../../../ADMIN/Qrcode_page.dart';
 import '../../../Public/MYcustomWidgets/Constant_page.dart';
 import '../../Multimedia_page/Pages/Multimedia_page.dart';
 import 'qr_scanner_page.dart';
@@ -20,14 +22,13 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime _selectedDate = DateTime.now();
   final DateTime _currentDate = DateTime.now();
   late Map<DateTime, String> _statusMap;
+  String _userRole = 'user'; // Default role
 
   @override
   void initState() {
     super.initState();
     _updateStatusMap();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      showCustomDialog(context); // Show dialog after the widget is built
-    });
+    _loadUserRole();
   }
 
   void _updateStatusMap() {
@@ -40,6 +41,16 @@ class _CalendarPageState extends State<CalendarPage> {
       threeDaysAgo.add(const Duration(days: 1)): 'absent',
       threeDaysAgo.add(const Duration(days: 2)): 'present',
     };
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    _userRole = prefs.getString('userRole') ?? 'user';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showCustomDialog(
+          context, _userRole); // Show dialog after the widget is built
+    });
   }
 
   Future<void> _refreshCalendar() async {
@@ -65,7 +76,7 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
           flexibleSpace: Center(
             child: Text(
-              '${widget.selectedCourse}',
+              widget.selectedCourse,
               style: TextStyle(
                 color: appBarTextColor,
                 fontSize: 24,
@@ -116,7 +127,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   _selectedDate = selectedDay;
                 });
                 if (isSameDay(selectedDay, _currentDate)) {
-                  _openQrScanner();
+                  _openQrPage();
                 }
               },
               selectedDayPredicate: (day) {
@@ -145,7 +156,7 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
               headerStyle: HeaderStyle(
                 formatButtonVisible: false,
-                titleTextStyle: TextStyle(
+                titleTextStyle: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -192,7 +203,7 @@ class _CalendarPageState extends State<CalendarPage> {
       child: Center(
         child: Text(
           '${date.day}',
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.black54,
             fontWeight: FontWeight.bold,
           ),
@@ -201,19 +212,29 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  void _openQrScanner() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QrScannerPage(),
-      ),
-    );
+  void _openQrPage() async {
+    if (_userRole == 'user') {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => QrScannerPage(),
+        ),
+      );
 
-    if (result == true) {
-      // Update the status of the current date to 'present' if QR code is valid
-      setState(() {
-        _statusMap[_currentDate] = 'present';
-      });
+      if (result == true) {
+        // Update the status of the current date to 'present' if QR code is valid
+        setState(() {
+          _statusMap[_currentDate] = 'present';
+        });
+      }
+    } else if (_userRole == 'admin') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => QRCodePage(
+              data: widget.selectedCourse), // Pass the selected course
+        ),
+      );
     }
   }
 
@@ -224,35 +245,78 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 }
 
-Future<void> showCustomDialog(BuildContext context) {
+Future<void> showCustomDialog(BuildContext context, String userRole) {
   return showDialog<void>(
     context: context,
     barrierDismissible: false, // User must tap a button to close the dialog
     builder: (BuildContext context) {
-      return AnimatedScale(
-        scale: 1.0,
-        duration: const Duration(milliseconds: 300),
-        child: AlertDialog(
-          contentPadding: const EdgeInsets.all(16.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
+      return AlertDialog(
+        contentPadding: const EdgeInsets.all(16.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        title: Text(
+          userRole == 'user'
+              ? 'Tap on the current date to scan the QR code.'
+              : 'Tap on the current date to open the QR code.',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
-          title: Text(
-            'Tap on the current date to scan the QR code.',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
+          textAlign: TextAlign.center,
+        ),
+        content: SizedBox(
+          width: double.maxFinite, // Allow content to use full width
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                width: 150,
+                height: 150,
+                child: Center(
+                  child: userRole == 'user'
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.camera_alt,
+                                size: 50, color: Colors.black54),
+                            const SizedBox(height: 8),
+                            Text(
+                              'QR Scanner',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.qr_code, size: 50, color: Colors.black),
+                            const SizedBox(height: 8),
+                            Text(
+                              'QR Code',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              TextButton(
+                child: const Text('Got It'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
           ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Got It'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
         ),
       );
     },
